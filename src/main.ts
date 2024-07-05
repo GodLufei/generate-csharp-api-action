@@ -1,4 +1,8 @@
 import * as core from '@actions/core'
+import * as github from '@actions/github'
+import * as io from '@actions/io'
+import * as path from "path"
+import * as fs from "fs"
 import { wait } from './wait'
 
 /**
@@ -7,20 +11,24 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
-
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const token: string = core.getInput('token')
+    const source: string = core.getInput('source')
+    generateRefitCode(token, source);
+    core.setOutput('state', 0)
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
 }
+
+const generateRefitCode = (token: string, source: string) => {
+  if (!token)
+    return core.setFailed('token must be set');
+
+  const sourcePath: string = path.join(process.env.GITHUB_WORKSPACE ?? __dirname, source);
+  core.debug(`scanning the path ${sourcePath}`);
+
+  fs.readdirSync(sourcePath).forEach(file => {
+    core.debug(file);
+  });
+
+};
